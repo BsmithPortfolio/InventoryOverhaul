@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,26 +19,53 @@ namespace InventorySwapper
         internal static GameObject InventoryGO;
         internal static GameObject SplitGO;
         internal static GameObject DragItemGO;
+        internal static GameObject HudGO;
+        private static ConfigEntry<bool> AltInterface;
+        private static ConfigEntry<Vector3> InvPos;
+        private static ConfigEntry<Vector3> SplitPos;
+        private static ConfigEntry<Vector3> ContainerPos;
         
-        
+
         public void Awake()
         {
+            AltInterface = Config.Bind("Inventory Interface", "Alt style", false, "Alternate Style");
+            InvPos =  Config.Bind("Inventory Interface", "Position", new Vector3(0f,0f,0f), new ConfigDescription("Location of SkillBar"));
+            SplitPos =  Config.Bind("Inventory Interface", "Position", new Vector3(0f,0f,0f), new ConfigDescription("Location of SkillBar"));
+            ContainerPos =  Config.Bind("Inventory Interface", "Position", new Vector3(0f,0f,0f), new ConfigDescription("Location of SkillBar"));
             Assembly assembly = Assembly.GetExecutingAssembly();
             Harmony harmony = new(ModGUID);
             LoadAssets();
             harmony.PatchAll(assembly);
+            
         }
         public void LoadAssets()
         {
             AssetBundle assetBundle = GetAssetBundleFromResources("containers");
-            ContainerGO = assetBundle.LoadAsset<GameObject>("ZContainer");
-            InventoryGO = assetBundle.LoadAsset<GameObject>("InventoryZ");
-            SplitGO = assetBundle.LoadAsset<GameObject>("SplitInventory");
-            DragItemGO = assetBundle.LoadAsset<GameObject>("drag_itemz");
+            switch (AltInterface.Value)
+            {
+                case true:
+                    ContainerGO = assetBundle.LoadAsset<GameObject>("RPGContainer");
+                    InventoryGO = assetBundle.LoadAsset<GameObject>("rpginv");
+                    SplitGO = assetBundle.LoadAsset<GameObject>("SplitInventory");
+                    DragItemGO = assetBundle.LoadAsset<GameObject>("drag_itemz");
+                    HudGO = assetBundle.LoadAsset<GameObject>("RPGHudElement");
+                    break;
+                case false:
+                    ContainerGO = assetBundle.LoadAsset<GameObject>("ZContainer");
+                    InventoryGO = assetBundle.LoadAsset<GameObject>("InventoryZ");
+                    SplitGO = assetBundle.LoadAsset<GameObject>("SplitInventory");
+                    DragItemGO = assetBundle.LoadAsset<GameObject>("drag_itemz");
+                    HudGO = assetBundle.LoadAsset<GameObject>("HudElementZ");
+                    break;
+            }
+            
+
+
             Debug.Log($"Loaded {ContainerGO.name}");
             Debug.Log($"Loaded {InventoryGO.name}");
             Debug.Log($"Loaded {SplitGO.name}");
             Debug.Log($"Loaded {DragItemGO.name}");
+            Debug.Log($"Loaded {HudGO.name}");
         }
         
         private static AssetBundle GetAssetBundleFromResources(string filename)
@@ -73,15 +101,17 @@ namespace InventorySwapper
             public static void Prefix(InventoryGui __instance)
             {
                 //Container Instantiation
-                Instantiate(ContainerGO, __instance.m_container.gameObject.transform, false);
-
+                var container = Instantiate(ContainerGO, __instance.m_container.gameObject.transform, false);
+                container.transform.localPosition = ContainerPos.Value;
+                
                 //Inventory Instantiation
-                Instantiate(InventoryGO, __instance.m_player.transform, false);
-                
-                //Todo: Setup Hud 1-8 quickslot override.
-                
+                var inventory = Instantiate(InventoryGO, __instance.m_player.transform, false);
+                inventory.transform.localPosition = InvPos.Value;
+
                 //Setup SplitWindow
-                Instantiate(SplitGO, __instance.m_splitPanel.gameObject.transform, false);
+                var splitpanel = Instantiate(SplitGO, __instance.m_splitPanel.gameObject.transform, false);
+                splitpanel.transform.localPosition = splitpanel.transform.localPosition = SplitPos.Value;
+                
                 //These events need to happen prior to the awake function that we Postfix in the next method so chosen route is Prefix in order to allow the instantiation run prior to games actual Awake() call
 
             }
@@ -202,5 +232,25 @@ namespace InventorySwapper
         }
 
 
+        [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.Update))]
+        public static class HotkeyBarPatch
+        {
+            public static void Postfix(HotkeyBar __instance)
+            {
+                __instance.m_elementPrefab = HudGO;
+            }
+            
+        }
+
+        [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Awake))]
+        public static class InventoryReshapePatch
+        {
+            public static void Postfix(Humanoid __instance)
+            {
+                if(!AltInterface.Value)
+                    return;
+                __instance.m_inventory = new Inventory("Inventory", null, 5, 12);
+            }
+        }
     }
 }

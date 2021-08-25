@@ -72,6 +72,30 @@
       <HintPath>$(GamePath)\BepInEx\core\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Sirenix.OdinInspector.Attributes, Version=3.0.4.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\TestUnityRiderTemplate\InventoryUI\Assets\Plugins\Sirenix\Assemblies\Sirenix.OdinInspector.Attributes.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Sirenix.OdinInspector.Editor, Version=3.0.4.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\TestUnityRiderTemplate\InventoryUI\Assets\Plugins\Sirenix\Assemblies\Sirenix.OdinInspector.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Sirenix.Serialization, Version=3.0.4.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\TestUnityRiderTemplate\InventoryUI\Assets\Plugins\Sirenix\Assemblies\Sirenix.Serialization.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Sirenix.Serialization.Config, Version=3.0.4.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\TestUnityRiderTemplate\InventoryUI\Assets\Plugins\Sirenix\Assemblies\Sirenix.Serialization.Config.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Sirenix.Utilities, Version=3.0.4.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\TestUnityRiderTemplate\InventoryUI\Assets\Plugins\Sirenix\Assemblies\Sirenix.Utilities.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Sirenix.Utilities.Editor, Version=3.0.4.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\TestUnityRiderTemplate\InventoryUI\Assets\Plugins\Sirenix\Assemblies\Sirenix.Utilities.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -335,6 +359,9 @@
     </Compile>
     <Compile Include="..\..\TestUnityRiderTemplate\InventoryUI\Assets\Inventory\MonoScripts\dragger.cs">
       <Link>MonoScripts\dragger.cs</Link>
+    </Compile>
+    <Compile Include="..\..\TestUnityRiderTemplate\InventoryUI\Assets\Inventory\MonoScripts\DragNDrop.cs">
+      <Link>MonoScripts\DragNDrop.cs</Link>
     </Compile>
     <Compile Include="..\..\TestUnityRiderTemplate\InventoryUI\Assets\Inventory\MonoScripts\IconCloner.cs">
       <Link>MonoScripts\IconCloner.cs</Link>
