@@ -69,7 +69,7 @@ namespace InventorySwapper
                 case true:
                     ContainerGO = assetBundle.LoadAsset<GameObject>("RPGContainer");
                     InventoryGO = assetBundle.LoadAsset<GameObject>("rpginv");
-                    SplitGO = assetBundle.LoadAsset<GameObject>("SplitInventory");
+                    SplitGO = assetBundle.LoadAsset<GameObject>("RPGSplitInv");
                     DragItemGO = assetBundle.LoadAsset<GameObject>("drag_itemz");
                     HudGO = assetBundle.LoadAsset<GameObject>("RPGHudElement");
                     break;
@@ -238,6 +238,8 @@ namespace InventorySwapper
             {
                 var scrollrect = InventoryMGR2.internalScroller;
                 SetPrivateField(scrollrect, "m_HasRebuiltLayout", false);
+                var containerscroller = ContainerMGR2.internalcontainerscroller;
+                SetPrivateField(containerscroller, "m_HasRebuiltLayout", false);
             }
         }
 
