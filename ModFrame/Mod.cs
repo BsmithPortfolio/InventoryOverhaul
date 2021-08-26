@@ -130,8 +130,6 @@ namespace InventorySwapper
                 //Inventory Instantiation
                 inventory = Instantiate(InventoryGO, __instance.m_player.transform, false);
                 inventory.transform.localPosition = InvPos.Value;
-                SetPrivateField(InventoryMGR2.internalScroller, "m_HasRebuiltLayout", false);
-                
                 
                 //Setup SplitWindow
                 splitpanel = Instantiate(SplitGO, __instance.m_splitPanel.gameObject.transform, false);
@@ -238,21 +236,8 @@ namespace InventorySwapper
         {
             public static void Prefix(InventoryGrid __instance)
             {
-                if (__instance.name == "ContainerGrid")
-                {
-                    __instance.m_gridRoot = ContainerMGR2.InternalCTGrid.gameObject.GetComponent<RectTransform>();
-                    __instance.m_elementPrefab = ContainerMGR2.InternalCTGrid.m_elementPrefab;
-                    ContainerMGR2.InternalCTGrid.m_elements = __instance.m_elements;
-                    ContainerMGR2.InternalCTGrid.m_inventory = __instance.m_inventory;
-                }
-
-                if (__instance.name == "PlayerGrid")
-                {
-                    __instance.m_gridRoot = InventoryMGR2.internalplayergrid.gameObject.GetComponent<RectTransform>();
-                    __instance.m_elementPrefab = ContainerMGR2.InternalCTGrid.m_elementPrefab;
-                    InventoryMGR2.internalplayergrid.m_elements = __instance.m_elements;
-                    InventoryMGR2.internalplayergrid.m_inventory = __instance.m_inventory;
-                }
+                var scrollrect = InventoryMGR2.internalScroller;
+                SetPrivateField(scrollrect, "m_HasRebuiltLayout", false);
             }
         }
 
