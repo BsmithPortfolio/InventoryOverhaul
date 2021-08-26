@@ -13,8 +13,8 @@ namespace InventorySwapper
     public class InventorySwapper : BaseUnityPlugin
     {
         private const string ModName = "InventorySwapper";
-        private const string ModVersion = "1.0";
-        private const string ModGUID = "com.zarboz.bettercontainer";
+        internal const string ModVersion = "0.0.6";
+        internal const string ModGUID = "com.zarboz.inventoryoverhaul";
         internal static GameObject ContainerGO;
         internal static GameObject InventoryGO;
         internal static GameObject SplitGO;
@@ -24,6 +24,8 @@ namespace InventorySwapper
         private static ConfigEntry<Vector3> InvPos;
         private static ConfigEntry<Vector3> SplitPos;
         private static ConfigEntry<Vector3> ContainerPos;
+        private static ConfigEntry<Int32> RowCount;
+        
         public static GameObject container { get; set; }
         public static GameObject inventory { get; set; }
         public static GameObject splitpanel { get; set; }
@@ -34,6 +36,7 @@ namespace InventorySwapper
             InvPos =  Config.Bind("Inventory Interface", "Position of Inventory", new Vector3(0f,0f,0f), new ConfigDescription("Location of Inventory"));
             SplitPos =  Config.Bind("Inventory Interface", "Position of SplitPanel", new Vector3(0f,0f,0f), new ConfigDescription("Location of SplitPanel"));
             ContainerPos =  Config.Bind("Inventory Interface", "Position of Container", new Vector3(0f,0f,0f), new ConfigDescription("Location of Container"));
+            RowCount = Config.Bind("Inventory Interface", "Count of Rows", 8, new ConfigDescription("Use this to increase your row count for inventory size increase while using this mod", new AcceptableValueRange<Int32>(5, 50)));
             Assembly assembly = Assembly.GetExecutingAssembly();
             Harmony harmony = new(ModGUID);
             LoadAssets();
@@ -49,8 +52,6 @@ namespace InventorySwapper
                     InvPos.Value = inventory.transform.localPosition;
                     ContainerPos.Value = container.transform.localPosition;
                     SplitPos.Value = splitpanel.transform.localPosition;
-                    break;
-                case false:
                     break;
             }
         }
@@ -129,10 +130,12 @@ namespace InventorySwapper
                 //Inventory Instantiation
                 inventory = Instantiate(InventoryGO, __instance.m_player.transform, false);
                 inventory.transform.localPosition = InvPos.Value;
-
+                SetPrivateField(InventoryMGR2.internalScroller, "m_HasRebuiltLayout", false);
+                
+                
                 //Setup SplitWindow
                 splitpanel = Instantiate(SplitGO, __instance.m_splitPanel.gameObject.transform, false);
-                splitpanel.transform.localPosition = splitpanel.transform.localPosition = SplitPos.Value;
+                splitpanel.transform.localPosition  = SplitPos.Value;
                 
                 //These events need to happen prior to the awake function that we Postfix in the next method so chosen route is Prefix in order to allow the instantiation run prior to games actual Awake() call
 
@@ -241,7 +244,6 @@ namespace InventorySwapper
                     __instance.m_elementPrefab = ContainerMGR2.InternalCTGrid.m_elementPrefab;
                     ContainerMGR2.InternalCTGrid.m_elements = __instance.m_elements;
                     ContainerMGR2.InternalCTGrid.m_inventory = __instance.m_inventory;
-                    
                 }
 
                 if (__instance.name == "PlayerGrid")
@@ -250,7 +252,6 @@ namespace InventorySwapper
                     __instance.m_elementPrefab = ContainerMGR2.InternalCTGrid.m_elementPrefab;
                     InventoryMGR2.internalplayergrid.m_elements = __instance.m_elements;
                     InventoryMGR2.internalplayergrid.m_inventory = __instance.m_inventory;
-                    
                 }
             }
         }
@@ -267,14 +268,22 @@ namespace InventorySwapper
         }
 
         [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Awake))]
-        public static class InventoryReshapePatch
+        
+
+        public static class InventorySizerPatch
         {
             public static void Postfix(Humanoid __instance)
             {
-                if(!AltInterface.Value)
-                    return;
-                __instance.m_inventory = new Inventory("Inventory", null, 5, 12);
+                __instance.m_inventory.m_height = RowCount.Value;
             }
         }
+        
+        
+        private static BindingFlags BindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        private static void SetPrivateField(object obj, string fieldName, object value)
+        {
+            obj.GetType().GetField(fieldName, BindFlags).SetValue(obj, value);
+        }
+        
     }
 }
