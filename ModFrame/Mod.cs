@@ -24,20 +24,42 @@ namespace InventorySwapper
         private static ConfigEntry<Vector3> InvPos;
         private static ConfigEntry<Vector3> SplitPos;
         private static ConfigEntry<Vector3> ContainerPos;
-        
+        public static GameObject container { get; set; }
+        public static GameObject inventory { get; set; }
+        public static GameObject splitpanel { get; set; }
 
         public void Awake()
         {
             AltInterface = Config.Bind("Inventory Interface", "Alt style", false, "Alternate Style");
-            InvPos =  Config.Bind("Inventory Interface", "Position", new Vector3(0f,0f,0f), new ConfigDescription("Location of SkillBar"));
-            SplitPos =  Config.Bind("Inventory Interface", "Position", new Vector3(0f,0f,0f), new ConfigDescription("Location of SkillBar"));
-            ContainerPos =  Config.Bind("Inventory Interface", "Position", new Vector3(0f,0f,0f), new ConfigDescription("Location of SkillBar"));
+            InvPos =  Config.Bind("Inventory Interface", "Position of Inventory", new Vector3(0f,0f,0f), new ConfigDescription("Location of Inventory"));
+            SplitPos =  Config.Bind("Inventory Interface", "Position of SplitPanel", new Vector3(0f,0f,0f), new ConfigDescription("Location of SplitPanel"));
+            ContainerPos =  Config.Bind("Inventory Interface", "Position of Container", new Vector3(0f,0f,0f), new ConfigDescription("Location of Container"));
             Assembly assembly = Assembly.GetExecutingAssembly();
             Harmony harmony = new(ModGUID);
             LoadAssets();
             harmony.PatchAll(assembly);
             
         }
+
+        public void Update()
+        {
+            switch (dragger.isMouseDown)
+            {
+                case true:
+                    InvPos.Value = inventory.transform.localPosition;
+                    ContainerPos.Value = container.transform.localPosition;
+                    SplitPos.Value = splitpanel.transform.localPosition;
+                    break;
+                case false:
+                    break;
+            }
+        }
+
+        public void OnDestroy()
+        {
+            Config.Save();
+        }
+
         public void LoadAssets()
         {
             AssetBundle assetBundle = GetAssetBundleFromResources("containers");
@@ -101,20 +123,22 @@ namespace InventorySwapper
             public static void Prefix(InventoryGui __instance)
             {
                 //Container Instantiation
-                var container = Instantiate(ContainerGO, __instance.m_container.gameObject.transform, false);
+                container = Instantiate(ContainerGO, __instance.m_container.gameObject.transform, false);
                 container.transform.localPosition = ContainerPos.Value;
                 
                 //Inventory Instantiation
-                var inventory = Instantiate(InventoryGO, __instance.m_player.transform, false);
+                inventory = Instantiate(InventoryGO, __instance.m_player.transform, false);
                 inventory.transform.localPosition = InvPos.Value;
 
                 //Setup SplitWindow
-                var splitpanel = Instantiate(SplitGO, __instance.m_splitPanel.gameObject.transform, false);
+                splitpanel = Instantiate(SplitGO, __instance.m_splitPanel.gameObject.transform, false);
                 splitpanel.transform.localPosition = splitpanel.transform.localPosition = SplitPos.Value;
                 
                 //These events need to happen prior to the awake function that we Postfix in the next method so chosen route is Prefix in order to allow the instantiation run prior to games actual Awake() call
 
             }
+
+
 
             public static void Postfix(InventoryGui __instance)
             {
