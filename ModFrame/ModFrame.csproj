@@ -370,12 +370,16 @@
     <Compile Include="..\..\TestUnityRiderTemplate\InventoryUI\Assets\Inventory\MonoScripts\InventoryMGR2.cs">
       <Link>MonoScripts\InventoryMGR2.cs</Link>
     </Compile>
+    <Compile Include="..\..\TestUnityRiderTemplate\InventoryUI\Assets\Inventory\MonoScripts\QuickAccessBar.cs">
+      <Link>MonoScripts\QuickAccessBar.cs</Link>
+    </Compile>
     <Compile Include="..\..\TestUnityRiderTemplate\InventoryUI\Assets\Inventory\MonoScripts\SplitMGR2.cs">
       <Link>MonoScripts\SplitMGR2.cs</Link>
     </Compile>
     <Compile Include="..\..\TestUnityRiderTemplate\InventoryUI\Assets\Inventory\MonoScripts\SplitWindowManager.cs">
       <Link>MonoScripts\SplitWindowManager.cs</Link>
     </Compile>
+    <Compile Include="KeyUtils.cs" />
     <Compile Include="Mod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

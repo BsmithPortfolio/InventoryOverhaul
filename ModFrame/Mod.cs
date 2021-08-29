@@ -25,7 +25,13 @@ namespace InventorySwapper
         private static ConfigEntry<Vector3> SplitPos;
         private static ConfigEntry<Vector3> ContainerPos;
         private static ConfigEntry<Int32> RowCount;
-        
+        public static ConfigEntry<string> hotKey1;
+        public static ConfigEntry<string> hotKey2;
+        public static ConfigEntry<string> hotKey3;
+        public static ConfigEntry<string>[] hotkeys;
+        private static ConfigEntry<float> quickAccessX;
+        private static ConfigEntry<float> quickAccessY;
+
         public static GameObject container { get; set; }
         public static GameObject inventory { get; set; }
         public static GameObject splitpanel { get; set; }
@@ -37,6 +43,20 @@ namespace InventorySwapper
             SplitPos =  Config.Bind("Inventory Interface", "Position of SplitPanel", new Vector3(0f,0f,0f), new ConfigDescription("Location of SplitPanel"));
             ContainerPos =  Config.Bind("Inventory Interface", "Position of Container", new Vector3(0f,0f,0f), new ConfigDescription("Location of Container"));
             RowCount = Config.Bind("Inventory Interface", "Count of Rows", 8, new ConfigDescription("Use this to increase your row count for inventory size increase while using this mod", new AcceptableValueRange<Int32>(5, 50)));
+            hotKey1 = Config.Bind<string>("Hotkeys", "HotKey1", "z", "Hotkey 1 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
+            hotKey2 = Config.Bind<string>("Hotkeys", "HotKey2", "x", "Hotkey 2 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
+            hotKey3 = Config.Bind<string>("Hotkeys", "HotKey3", "c", "Hotkey 3 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
+            quickAccessX = Config.Bind<float>("ZCurrentPositions", "quickAccessX", 9999, "Current X of Quick Slots");
+            quickAccessY = Config.Bind<float>("ZCurrentPositions", "quickAccessY", 9999, "Current Y of Quick Slots");
+
+        
+            hotkeys = new ConfigEntry<string>[]
+            {
+                hotKey1,
+                hotKey2,
+                hotKey3,
+            };
+            
             Assembly assembly = Assembly.GetExecutingAssembly();
             Harmony harmony = new(ModGUID);
             LoadAssets();
@@ -102,6 +122,8 @@ namespace InventorySwapper
                 return AssetBundle.LoadFromStream(stream);
             }
         }
+        
+        //Patches
 
         [HarmonyPatch(typeof(ZNetScene), "Awake")]
         public static class LoaderPatch
@@ -242,8 +264,7 @@ namespace InventorySwapper
                 SetPrivateField(containerscroller, "m_HasRebuiltLayout", false);
             }
         }
-
-
+        
         [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.Update))]
         public static class HotkeyBarPatch
         {
@@ -255,8 +276,6 @@ namespace InventorySwapper
         }
 
         [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Awake))]
-        
-
         public static class InventorySizerPatch
         {
             public static void Postfix(Humanoid __instance)
@@ -264,8 +283,77 @@ namespace InventorySwapper
                 __instance.m_inventory.m_height = RowCount.Value;
             }
         }
+
+        [HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
+        public static class HudAwakePatch
+        {
+            public static void Postfix(Hud __instance)
+            {
+                Transform newBar = Instantiate(__instance.m_rootObject.transform.Find("HotKeyBar"));
+                newBar.name = "QuickAccessBar";
+                newBar.SetParent(__instance.m_rootObject.transform);
+                newBar.GetComponent<RectTransform>().localPosition = Vector3.zero;
+                GameObject go = HudGO;
+                QuickAccessBar qab = newBar.gameObject.AddComponent<QuickAccessBar>();
+                qab.m_elementPrefab = go;
+                DragNDrop.ApplyDragWindowCntrl(newBar.gameObject);
+                Destroy(newBar.GetComponent<HotkeyBar>());
+            }
+        }
+
+        [HarmonyPatch(typeof(Player), nameof(Player.Update))]
+        public static class UpdatePatch
+        {
+            public static void Postfix(Player __instance, Inventory ___m_inventory)
+            {
+                if(Player.m_localPlayer==null)
+                    return;
+                int which;
+                if (KeyUtils.CheckKeyDown(hotKey1.Value))
+                    which = 1;
+                else if (KeyUtils.CheckKeyDown(hotKey2.Value))
+                    which = 2;
+                else if (KeyUtils.CheckKeyDown(hotKey3.Value))
+                    which = 3;
+                else return;
+
+                ItemDrop.ItemData itemAt = Player.m_localPlayer.m_inventory.GetItemAt(which + 4, ___m_inventory.GetHeight() - 1);
+                if (itemAt != null)
+                {
+                    __instance.UseItem(null, itemAt, false);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateInventory))]
+        public static class HotKeyPatch
+        {
+            public static void Postfix(InventoryGrid ___m_playerGrid)
+            {
+                Inventory inv = Player.m_localPlayer.GetInventory();
+                int offset = inv.GetWidth() * (inv.GetHeight() - 1);
+                SetSlotText(hotKey1.Value, ___m_playerGrid.m_gridRoot.transform.GetChild(offset++), false);
+                SetSlotText(hotKey2.Value, ___m_playerGrid.m_gridRoot.transform.GetChild(offset++), false);
+                SetSlotText(hotKey3.Value, ___m_playerGrid.m_gridRoot.transform.GetChild(offset++), false);
+            }
+        }
         
-        
+        //Assist Funcs
+        public static void SetSlotText(string value, Transform transform, bool center = true)
+        {
+            Transform t = transform.Find("binding");
+            if (!t)
+            {
+                t = Instantiate(HudGO.transform.Find("binding"), transform);
+            }
+            t.GetComponent<Text>().enabled = true;
+            t.GetComponent<Text>().text = value;
+            if (center)
+            {
+                t.GetComponent<RectTransform>().sizeDelta = new Vector2(80, 17);
+                t.GetComponent<RectTransform>().anchoredPosition = new Vector2(30, -10);
+            }
+        }
         private static BindingFlags BindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         private static void SetPrivateField(object obj, string fieldName, object value)
         {
