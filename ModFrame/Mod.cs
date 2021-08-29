@@ -20,6 +20,8 @@ namespace InventorySwapper
         internal static GameObject SplitGO;
         internal static GameObject DragItemGO;
         internal static GameObject HudGO;
+        private static Transform newBar;
+        
         private static ConfigEntry<bool> AltInterface;
         private static ConfigEntry<Vector3> InvPos;
         private static ConfigEntry<Vector3> SplitPos;
@@ -29,8 +31,7 @@ namespace InventorySwapper
         public static ConfigEntry<string> hotKey2;
         public static ConfigEntry<string> hotKey3;
         public static ConfigEntry<string>[] hotkeys;
-        private static ConfigEntry<float> quickAccessX;
-        private static ConfigEntry<float> quickAccessY;
+        private static ConfigEntry<Vector3> QuickAccessPos;
 
         public static GameObject container { get; set; }
         public static GameObject inventory { get; set; }
@@ -42,12 +43,12 @@ namespace InventorySwapper
             InvPos =  Config.Bind("Inventory Interface", "Position of Inventory", new Vector3(0f,0f,0f), new ConfigDescription("Location of Inventory"));
             SplitPos =  Config.Bind("Inventory Interface", "Position of SplitPanel", new Vector3(0f,0f,0f), new ConfigDescription("Location of SplitPanel"));
             ContainerPos =  Config.Bind("Inventory Interface", "Position of Container", new Vector3(0f,0f,0f), new ConfigDescription("Location of Container"));
+            QuickAccessPos =  Config.Bind("Inventory Interface", "Position of QuickAccess", new Vector3(0f,0f,0f), new ConfigDescription("Location of QuickAccess"));
             RowCount = Config.Bind("Inventory Interface", "Count of Rows", 8, new ConfigDescription("Use this to increase your row count for inventory size increase while using this mod", new AcceptableValueRange<Int32>(5, 50)));
             hotKey1 = Config.Bind<string>("Hotkeys", "HotKey1", "z", "Hotkey 1 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
             hotKey2 = Config.Bind<string>("Hotkeys", "HotKey2", "x", "Hotkey 2 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
             hotKey3 = Config.Bind<string>("Hotkeys", "HotKey3", "c", "Hotkey 3 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
-            quickAccessX = Config.Bind<float>("ZCurrentPositions", "quickAccessX", 9999, "Current X of Quick Slots");
-            quickAccessY = Config.Bind<float>("ZCurrentPositions", "quickAccessY", 9999, "Current Y of Quick Slots");
+            
 
         
             hotkeys = new ConfigEntry<string>[]
@@ -74,6 +75,10 @@ namespace InventorySwapper
                     SplitPos.Value = splitpanel.transform.localPosition;
                     break;
             }
+
+            if (Player.m_localPlayer is null)
+                return;
+            QuickAccessPos.Value = newBar.gameObject.transform.localPosition;
         }
 
         public void OnDestroy()
@@ -110,19 +115,7 @@ namespace InventorySwapper
             Debug.Log($"Loaded {DragItemGO.name}");
             Debug.Log($"Loaded {HudGO.name}");
         }
-        
-        private static AssetBundle GetAssetBundleFromResources(string filename)
-        {
-            var execAssembly = Assembly.GetExecutingAssembly();
-            var resourceName = execAssembly.GetManifestResourceNames()
-                .Single(str => str.EndsWith(filename));
-
-            using (var stream = execAssembly.GetManifestResourceStream(resourceName))
-            {
-                return AssetBundle.LoadFromStream(stream);
-            }
-        }
-        
+   
         //Patches
 
         [HarmonyPatch(typeof(ZNetScene), "Awake")]
@@ -287,9 +280,11 @@ namespace InventorySwapper
         [HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
         public static class HudAwakePatch
         {
+            
+
             public static void Postfix(Hud __instance)
             {
-                Transform newBar = Instantiate(__instance.m_rootObject.transform.Find("HotKeyBar"));
+                newBar = Instantiate(__instance.m_rootObject.transform.Find("HotKeyBar"));
                 newBar.name = "QuickAccessBar";
                 newBar.SetParent(__instance.m_rootObject.transform);
                 newBar.GetComponent<RectTransform>().localPosition = Vector3.zero;
@@ -297,6 +292,7 @@ namespace InventorySwapper
                 QuickAccessBar qab = newBar.gameObject.AddComponent<QuickAccessBar>();
                 qab.m_elementPrefab = go;
                 DragNDrop.ApplyDragWindowCntrl(newBar.gameObject);
+                newBar.gameObject.transform.localPosition = QuickAccessPos.Value;
                 Destroy(newBar.GetComponent<HotkeyBar>());
             }
         }
@@ -332,6 +328,11 @@ namespace InventorySwapper
             {
                 Inventory inv = Player.m_localPlayer.GetInventory();
                 int offset = inv.GetWidth() * (inv.GetHeight() - 1);
+                offset++;
+                offset++;
+                offset++;
+                offset++;
+                offset++;
                 SetSlotText(hotKey1.Value, ___m_playerGrid.m_gridRoot.transform.GetChild(offset++), false);
                 SetSlotText(hotKey2.Value, ___m_playerGrid.m_gridRoot.transform.GetChild(offset++), false);
                 SetSlotText(hotKey3.Value, ___m_playerGrid.m_gridRoot.transform.GetChild(offset++), false);
@@ -339,6 +340,18 @@ namespace InventorySwapper
         }
         
         //Assist Funcs
+             
+        private static AssetBundle GetAssetBundleFromResources(string filename)
+        {
+            var execAssembly = Assembly.GetExecutingAssembly();
+            var resourceName = execAssembly.GetManifestResourceNames()
+                .Single(str => str.EndsWith(filename));
+
+            using (var stream = execAssembly.GetManifestResourceStream(resourceName))
+            {
+                return AssetBundle.LoadFromStream(stream);
+            }
+        }
         public static void SetSlotText(string value, Transform transform, bool center = true)
         {
             Transform t = transform.Find("binding");
